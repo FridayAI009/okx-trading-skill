@@ -1,0 +1,14 @@
+{
+  "name": "crypto-trading-skill",
+  "description": "OKX 加密货币交易助手",
+  "version": "1.0.0",
+  "author": "Friday",
+  "config": {
+    "OKX_API_KEY": "736bd7b4-b661-4637-b52a-a548f2007e00",
+    "OKX_SECRET": "80ABA720C82BF4CA34ED9D6D359F756D",
+    "OKX_PASSPHRASE": "Tong@okx1987"
+  },
+  "scripts": {
+    "main": "engine.py"
+  }
+}
