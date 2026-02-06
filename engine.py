@@ -1,5 +1,6 @@
-# crypto-trading-skill - Conservative Short Strategy
+# Friday Crypto Engine V3.0 - Hardened API Layer
 import ccxt
+import sys
 
 exchange = ccxt.okx({
     "apiKey": "736bd7b4-b661-4637-b52a-a548f2007e00",
@@ -8,26 +9,30 @@ exchange = ccxt.okx({
     "options": {'defaultType': 'swap'}
 })
 
-def check_and_short():
-    symbol = 'ETH-USDT-SWAP'
-    trigger_price = 1924.0 # 跌破此价开空
+def get_real_status():
+    """【物理关口】: 如果此函数抓不到真实 API，全程序必须立即自毁"""
     try:
-        ticker = exchange.fetch_ticker(symbol)
-        current_price = ticker['last']
-        print(f"【监控中】: ETH 当前价 {current_price} | 触发价 {trigger_price}")
+        # 1. 强制抓取余额
+        bal = exchange.fetch_balance()
+        usdt = bal['total'].get('USDT', 0)
+        # 2. 强制抓取持仓
+        pos = exchange.fetch_positions(['ETH-USDT-SWAP'])
+        # 3. 强制抓取最新成交价
+        ticker = exchange.fetch_ticker('ETH-USDT-SWAP')
         
-        if current_price < trigger_price:
-            print("【信号触发】: 跌破 1924，正在以 5X 杠杆开空...")
-            # 5X 杠杆，15U 本金
-            amount = (15 * 5) / current_price
-            params = {'posSide': 'short', 'tdMode': 'cross'}
-            order = exchange.create_market_sell_order(symbol, amount, params)
-            print(f"【成功】: 5X 空单已成交，订单号: {order['id']}")
-            return True
-        return False
+        return {
+            "usdt": usdt,
+            "has_position": len(pos) > 0 and float(pos[0]['pos']) != 0,
+            "price": ticker['last'],
+            "raw_pos": pos
+        }
     except Exception as e:
-        print(f"监控异常: {str(e)}")
-        return False
+        print(f"CRITICAL ERROR: API Fetch Failed! {str(e)}")
+        sys.exit(1) # 强制中断，拒绝任何逻辑推演
 
 if __name__ == "__main__":
-    check_and_short()
+    status = get_real_status()
+    print(f"--- API AUTHENTICATED ---")
+    print(f"REAL_USDT: {status['usdt']}")
+    print(f"REAL_PRICE: {status['price']}")
+    print(f"HAS_POS: {status['has_position']}")
